@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prediction Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            width: 340px;
+            text-align: center;
+        }
+        h1 {
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+        .account {
+            margin-bottom: 20px;
+        }
+        label {
+            margin-top: 15px;
+            font-weight: bold;
+        }
+        input {
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1em;
+        }
+        button {
+            padding: 12px;
+            margin-top: 25px;
+            background: #007bff;
+            border: none;
+            color: white;
+            border-radius: 4px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #predictionResult {
+            margin-top: 25px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .loader {
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #007bff;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Prediction Tool</h1>
+        <form id="predictionForm">
+            <div class="account">
+                <label>Account 1:</label>
+                <label for="initialDate1">Initial Date:</label>
+                <input type="date" id="initialDate1" required>
+                <label for="sequence1">16-Digit Sequence:</label>
+                <input type="text" id="sequence1" maxlength="16" pattern="\d{16}" required>
+                <label for="currentDate1">Current Date:</label>
+                <input type="date" id="currentDate1" required>
+            </div>
+            <div class="account">
+                <label>Account 2:</label>
+                <label for="initialDate2">Initial Date:</label>
+                <input type="date" id="initialDate2" required>
+                <label for="sequence2">16-Digit Sequence:</label>
+                <input type="text" id="sequence2" maxlength="16" pattern="\d{16}" required>
+                <label for="currentDate2">Current Date:</label>
+                <input type="date" id="currentDate2" required>
+            </div>
+            <div class="account">
+                <label>Account 3:</label>
+                <label for="initialDate3">Initial Date:</label>
+                <input type="date" id="initialDate3" required>
+                <label for="sequence3">16-Digit Sequence:</label>
+                <input type="text" id="sequence3" maxlength="16" pattern="\d{16}" required>
+                <label for="currentDate3">Current Date:</label>
+                <input type="date" id="currentDate3" required>
+            </div>
+            <div class="account">
+                <label>Account 4:</label>
+                <label for="initialDate4">Initial Date:</label>
+                <input type="date" id="initialDate4" required>
+                <label for="sequence4">16-Digit Sequence:</label>
+                <input type="text" id="sequence4" maxlength="16" pattern="\d{16}" required>
+                <label for="currentDate4">Current Date:</label>
+                <input type="date" id="currentDate4" required>
+            </div>
+            <button type="submit">Calculate Pattern</button>
+        </form>
+        <div class="loader" id="loader"></div>
+        <div id="predictionResult"></div>
+        <div id="newPredictionFormContainer" style="display:none;">
+            <h2>New Prediction</h2>
+            <form id="newPredictionForm">
+                <label for="newDate">Enter Date:</label>
+                <input type="date" id="newDate" required>
+                <button type="submit">Get Prediction</button>
+            </form>
+        </div>
+    </div>
+    <script>
+        let calculatedPattern = "";
+
+        document.getElementById('predictionForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            showLoader();
+
+            setTimeout(() => {
+                const patterns = [];
+                for (let i = 1; i <= 4; i++) {
+                    const initialDate = new Date(document.getElementById(`initialDate${i}`).value);
+                    const sequence = document.getElementById(`sequence${i}`).value;
+                    const currentDate = new Date(document.getElementById(`currentDate${i}`).value);
+
+                    if (sequence.length !== 16 || isNaN(sequence)) {
+                        alert('Please enter a valid 16-digit sequence for all accounts.');
+                        hideLoader();
+                        return;
+                    }
+
+                    const pattern = calculatePattern(initialDate, sequence, currentDate);
+                    patterns.push(pattern);
+                }
+
+                calculatedPattern = combinePatterns(patterns);
+                document.getElementById('predictionResult').innerText = "Pattern Calculated!";
+                document.getElementById('newPredictionFormContainer').style.display = 'block';
+                hideLoader();
+            }, 2000); // Simulate loading time
+        });
+
+        document.getElementById('newPredictionForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const newDate = new Date(document.getElementById('newDate').value);
+            const prediction = generatePrediction(newDate, calculatedPattern);
+
+            document.getElementById('predictionResult').innerText = `Prediction: ${prediction}`;
+        });
+
+        function calculatePattern(initialDate, sequence, currentDate) {
+            const timeDifference = Math.abs(currentDate - initialDate);
+            const daysDifference = Math.ceil(timeDifference / (1000 * 60 * 60 * 24));
+            const sequenceSum = sequence.split('').reduce((sum, digit) => sum + parseInt(digit), 0);
+            const basePattern = (sequenceSum * daysDifference).toString().padStart(16, '0');
+
+            return basePattern;
+        }
+
+        function combinePatterns(patterns) {
+            let combinedPattern = '';
+            for (let i = 0; i < 16; i++) {
+                combinedPattern += patterns.reduce((sum, pattern) => sum + parseInt(pattern[i]), 0) % 10;
+            }
+
+            return combinedPattern;
+        }
+
+        function generatePrediction(date, pattern) {
+            const dayOfYear = Math.floor((date - new Date(date.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
+            let prediction = '';
+
+            for (let i = 0; i < 16; i++) {
+                prediction += (parseInt(pattern[i]) + dayOfYear) % 10;
+            }
+
+            return prediction;
+        }
+
+        function showLoader() {
+            document.getElementById('loader').style.display = 'block';
+        }
+
+        function hideLoader() {
+            document.getElementById('loader').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
